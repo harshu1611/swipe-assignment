@@ -9,11 +9,13 @@ import InvoiceItem from "./InvoiceItem";
 import InvoiceModal from "./InvoiceModal";
 import { BiArrowBack } from "react-icons/bi";
 import InputGroup from "react-bootstrap/InputGroup";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addInvoice, updateInvoice } from "../redux/invoicesSlice";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import generateRandomId from "../utils/generateRandomId";
 import { useInvoiceListData } from "../redux/hooks";
+import { selectProducts } from "../redux/productSlice";
+import { currencyList } from "../utils/currencyList";
 
 const InvoiceForm = () => {
   const dispatch = useDispatch();
@@ -22,7 +24,9 @@ const InvoiceForm = () => {
   const navigate = useNavigate();
   const isCopy = location.pathname.includes("create");
   const isEdit = location.pathname.includes("edit");
-
+  const [currencyValues,setCurrencyValues]= useState(null)
+  const[exchangeRate,setExhangeRate]= useState()
+  const productList=useSelector(selectProducts)
   const [isOpen, setIsOpen] = useState(false);
   const [copyId, setCopyId] = useState("");
   const { getOneInvoice, listSize } = useInvoiceListData();
@@ -53,7 +57,8 @@ const InvoiceForm = () => {
           taxAmount: "0.00",
           discountRate: "",
           discountAmount: "0.00",
-          currency: "$",
+          currency: `{"name":"USD (United States Dollar)","sign":"$","value":"USD"}`,
+          exchangeRate:1,
           items: [
             {
               itemId: 0,
@@ -66,10 +71,37 @@ const InvoiceForm = () => {
         }
   );
 
+  if(params.id){
+    console.log(getOneInvoice(params.id))
+  }
+  useEffect(()=>{
+    if(currencyValues){
+      const curr=JSON.parse(formData.currency)
+      setFormData({...formData, exchangeRate:currencyValues[curr.value]})
+    }
+
+    handleCalculateTotal();
+  },[formData.currency])
   useEffect(() => {
     handleCalculateTotal();
+    getCurrencyValues()
   }, []);
 
+  useEffect(() => {
+    handleCalculateTotal();
+  }, [formData.items, formData.taxRate, formData.discountRate, formData.exchangeRate]);
+
+
+  const getCurrencyValues=async()=>{
+   const res=await fetch(`https://api.freecurrencyapi.com/v1/latest?apikey=fca_live_gtDyM1FECsTwk32s5tvOu7t0AygooP9QeP8YQQJM&base_currency=USD&currencies=${currencyList.map(currency=>currency.value)}`)
+
+   res.json().then(({data})=>{
+    
+    setCurrencyValues(data)
+   })
+
+   
+  }
   const handleRowDel = (itemToDelete) => {
     const updatedItems = formData.items.filter(
       (item) => item.itemId !== itemToDelete.itemId
@@ -95,16 +127,18 @@ const InvoiceForm = () => {
   };
 
   const handleCalculateTotal = () => {
+   
+    
     setFormData((prevFormData) => {
       let subTotal = 0;
 
       prevFormData.items.forEach((item) => {
         subTotal +=
-          parseFloat(item.itemPrice).toFixed(2) * parseInt(item.itemQuantity);
+          parseFloat(item.itemPrice).toFixed(2) * parseInt(item.itemQuantity) * prevFormData.exchangeRate;
       });
 
       const taxAmount = parseFloat(
-        subTotal * (prevFormData.taxRate / 100)
+        subTotal * (prevFormData.taxRate / 100) 
       ).toFixed(2);
       const discountAmount = parseFloat(
         subTotal * (prevFormData.discountRate / 100)
@@ -113,11 +147,11 @@ const InvoiceForm = () => {
         subTotal -
         parseFloat(discountAmount) +
         parseFloat(taxAmount)
-      ).toFixed(2);
+      ) .toFixed(2);
 
       return {
         ...prevFormData,
-        subTotal: parseFloat(subTotal).toFixed(2),
+        subTotal: parseFloat(subTotal).toFixed(2) ,
         taxAmount,
         discountAmount,
         total,
@@ -158,6 +192,7 @@ const InvoiceForm = () => {
 
   const handleAddInvoice = () => {
     if (isEdit) {
+      console.log(formData)
       dispatch(updateInvoice({ id: params.id, updatedInvoice: formData }));
       alert("Invoice updated successfuly 🥳");
     } else if (isCopy) {
@@ -185,13 +220,20 @@ const InvoiceForm = () => {
 
   return (
     <Form onSubmit={openModal}>
-      <div className="d-flex align-items-center">
+      
+      <div className="d-flex align-items-center justify-content-between flex-row mt-3">
+        <div className="d-flex flex-row align-items-center">
         <BiArrowBack size={18} />
         <div className="fw-bold mt-1 mx-2 cursor-pointer">
           <Link to="/">
             <h5>Go Back</h5>
           </Link>
         </div>
+        </div>
+        
+        <Button variant="primary"  className="d-block w-30 " onClick={()=>{navigate("/products")}}>
+              Show Products
+            </Button>
       </div>
 
       <Row>
@@ -307,13 +349,17 @@ const InvoiceForm = () => {
               onRowDel={handleRowDel}
               currency={formData.currency}
               items={formData.items}
+              exchangeRate={formData.exchangeRate}
+              isEdit={isEdit || (isCopy && copyId)}
+
             />
+           
             <Row className="mt-4 justify-content-end">
               <Col lg={6}>
                 <div className="d-flex flex-row align-items-start justify-content-between">
                   <span className="fw-bold">Subtotal:</span>
                   <span>
-                    {formData.currency}
+                    {JSON.parse(formData.currency).sign}
                     {formData.subTotal}
                   </span>
                 </div>
@@ -323,7 +369,7 @@ const InvoiceForm = () => {
                     <span className="small">
                       ({formData.discountRate || 0}%)
                     </span>
-                    {formData.currency}
+                    {JSON.parse(formData.currency).sign}
                     {formData.discountAmount || 0}
                   </span>
                 </div>
@@ -331,7 +377,7 @@ const InvoiceForm = () => {
                   <span className="fw-bold">Tax:</span>
                   <span>
                     <span className="small">({formData.taxRate || 0}%)</span>
-                    {formData.currency}
+                    {JSON.parse(formData.currency).sign}
                     {formData.taxAmount || 0}
                   </span>
                 </div>
@@ -342,7 +388,7 @@ const InvoiceForm = () => {
                 >
                   <span className="fw-bold">Total:</span>
                   <span className="fw-bold">
-                    {formData.currency}
+                    {JSON.parse(formData.currency).sign}
                     {formData.total || 0}
                   </span>
                 </div>
@@ -370,7 +416,7 @@ const InvoiceForm = () => {
             >
               {isEdit ? "Update Invoice" : "Add Invoice"}
             </Button>
-            <Button variant="primary" type="submit" className="d-block w-100">
+            <Button variant="primary"  className="d-block w-100">
               Review Invoice
             </Button>
             <InvoiceModal
@@ -382,6 +428,7 @@ const InvoiceForm = () => {
                 currency: formData.currency,
                 currentDate: formData.currentDate,
                 invoiceNumber: formData.invoiceNumber,
+                exchangeRate: formData.exchangeRate,
                 dateOfIssue: formData.dateOfIssue,
                 billTo: formData.billTo,
                 billToEmail: formData.billToEmail,
@@ -412,15 +459,13 @@ const InvoiceForm = () => {
                 }
                 className="btn btn-light my-1"
                 aria-label="Change Currency"
+                defaultValue={isEdit? (JSON.parse(formData.currency).name):""}
               >
-                <option value="$">USD (United States Dollar)</option>
-                <option value="£">GBP (British Pound Sterling)</option>
-                <option value="¥">JPY (Japanese Yen)</option>
-                <option value="$">CAD (Canadian Dollar)</option>
-                <option value="$">AUD (Australian Dollar)</option>
-                <option value="$">SGD (Singapore Dollar)</option>
-                <option value="¥">CNY (Chinese Renminbi)</option>
-                <option value="₿">BTC (Bitcoin)</option>
+                {isEdit && <option value={formData.currency}>{JSON.parse(formData.currency).name}</option>}
+                {currencyList.map((item)=>(
+                   <option value={JSON.stringify(item)}>{item.name}</option>
+                ))}
+           
               </Form.Select>
             </Form.Group>
             <Form.Group className="my-3">

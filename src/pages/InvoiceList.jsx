@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Card, Col, Row, Table } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { BiSolidPencil, BiTrash } from "react-icons/bi";
@@ -23,6 +23,7 @@ const InvoiceList = () => {
     }
   };
 
+  
   return (
     <Row>
       <Col className="mx-auto" xs={12} md={8} lg={9}>
@@ -71,13 +72,15 @@ const InvoiceList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoiceList.map((invoice) => (
-                    <InvoiceRow
+                   {invoiceList && invoiceList.map((invoice) => {
+                  
+                    return <InvoiceRow
                       key={invoice.id}
                       invoice={invoice}
                       navigate={navigate}
                     />
-                  ))}
+                  } 
+                  )} 
                 </tbody>
               </Table>
             </div>
@@ -115,8 +118,8 @@ const InvoiceRow = ({ invoice, navigate }) => {
       <td className="fw-normal">{invoice.billTo}</td>
       <td className="fw-normal">{invoice.dateOfIssue}</td>
       <td className="fw-normal">
-        {invoice.currency}
-        {invoice.total}
+        {JSON.parse(invoice.currency).sign}
+        {invoice.total }
       </td>
       <td style={{ width: "5%" }}>
         <Button variant="outline-primary" onClick={handleEditClick}>
@@ -146,6 +149,7 @@ const InvoiceRow = ({ invoice, navigate }) => {
           isOpen,
           id: invoice.id,
           currency: invoice.currency,
+          exchangeRate:invoice.exchangeRate,
           currentDate: invoice.currentDate,
           invoiceNumber: invoice.invoiceNumber,
           dateOfIssue: invoice.dateOfIssue,

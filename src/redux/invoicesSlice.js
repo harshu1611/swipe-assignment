@@ -12,9 +12,10 @@ const invoicesSlice = createSlice({
     },
     updateInvoice: (state, action) => {
       const index = state.findIndex(
-        (invoice) => invoice.id === action.payload.id
+        (invoice) => invoice.id == action.payload.id
       );
       if (index !== -1) {
+        console.log(state[index])
         state[index] = action.payload.updatedInvoice;
       }
     },

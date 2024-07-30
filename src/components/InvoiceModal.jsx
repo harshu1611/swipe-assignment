@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -6,6 +6,8 @@ import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
 import Modal from "react-bootstrap/Modal";
 import { BiPaperPlane, BiCloudDownload } from "react-icons/bi";
+import { useSelector } from "react-redux";
+import { selectProducts } from "../redux/productSlice";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -27,6 +29,13 @@ const GenerateInvoice = () => {
 };
 
 const InvoiceModal = (props) => {
+  const productList = useSelector(selectProducts);
+  const getOneProduct = (receivedId) => {
+    return productList.find((product) => product.id === receivedId) || null;
+  };
+
+  
+
   return (
     <div>
       <Modal
@@ -52,7 +61,7 @@ const InvoiceModal = (props) => {
               <h6 className="fw-bold mt-1 mb-2">Amount&nbsp;Due:</h6>
               <h5 className="fw-bold text-secondary">
                 {" "}
-                {props.currency} {props.total}
+                {JSON.parse(props.info.currency).sign} {props.total }
               </h5>
             </div>
           </div>
@@ -86,17 +95,30 @@ const InvoiceModal = (props) => {
               </thead>
               <tbody>
                 {props.items.map((item, i) => {
+               
                   return (
                     <tr id={i} key={i}>
                       <td style={{ width: "70px" }}>{item.itemQuantity}</td>
                       <td>
-                        {item.itemName} - {item.itemDescription}
+                        {productList && getOneProduct(item.itemId)
+                          ? getOneProduct(item.itemId).name
+                          : item.itemName}{" "}
+                        -{" "}
+                        {productList && getOneProduct(item.itemId)
+                          ? getOneProduct(item.itemId).description
+                          : item.itemDescription}
                       </td>
                       <td className="text-end" style={{ width: "100px" }}>
-                        {props.currency} {item.itemPrice}
+                        {JSON.parse(props.info.currency).sign}{" "}
+                        {productList && getOneProduct(item.itemId)
+                          ? getOneProduct(item.itemId).price * props.info.exchangeRate
+                          : item.itemPrice * props.info.exchangeRate}
                       </td>
                       <td className="text-end" style={{ width: "100px" }}>
-                        {props.currency} {item.itemPrice * item.itemQuantity}
+                        {JSON.parse(props.info.currency).sign}{" "}
+                        {productList && getOneProduct(item.itemId)
+                          ? getOneProduct(item.itemId).price * item.itemQuantity * props.info.exchangeRate
+                          : item.itemPrice * item.itemQuantity * props.info.exchangeRate}
                       </td>
                     </tr>
                   );
@@ -116,7 +138,7 @@ const InvoiceModal = (props) => {
                     TAX
                   </td>
                   <td className="text-end" style={{ width: "100px" }}>
-                    {props.currency} {props.taxAmmount}
+                    {JSON.parse(props.info.currency).sign} {props.taxAmount }
                   </td>
                 </tr>
                 {props.discountAmmount !== 0.0 && (
@@ -126,7 +148,7 @@ const InvoiceModal = (props) => {
                       DISCOUNT
                     </td>
                     <td className="text-end" style={{ width: "100px" }}>
-                      {props.currency} {props.discountAmmount}
+                      {JSON.parse(props.info.currency).sign} {props.discountAmount}
                     </td>
                   </tr>
                 )}
@@ -136,7 +158,7 @@ const InvoiceModal = (props) => {
                     TOTAL
                   </td>
                   <td className="text-end" style={{ width: "100px" }}>
-                    {props.currency} {props.total}
+                    {JSON.parse(props.info.currency).sign} {props.total }
                   </td>
                 </tr>
               </tbody>
