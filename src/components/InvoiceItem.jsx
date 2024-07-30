@@ -69,8 +69,8 @@ const ItemRow = (props) => {
 
   return (
     <tr>
-      <td style={{ width: "100%" }}>
-        <select onChange={handleSelectChange} value={selectedItem && selectedItem.itemName} defaultValue={isEdit ? item : ""} style={{borderRadius:6, width:'auto', backgroundColor:'#f5f7f9', borderWidth:0, padding:2, justifyItems:'center', alignContent:'center'}}>
+      <td style={{ width: "auto", height:'100%'}}>
+        <select onChange={handleSelectChange} value={selectedItem && selectedItem.itemName} defaultValue={isEdit ? item : ""} style={{borderRadius:6, width:'auto', backgroundColor:'#f5f7f9', borderWidth:0, padding:2, justifyItems:'center', alignContent:'center',height:'100%'}}>
           {isEdit ?
           <option value={item}>{item.itemName}</option>
           :
@@ -83,7 +83,7 @@ const ItemRow = (props) => {
           ))}
         </select>
       </td>
-      <td style={{ minWidth: "auto" }}>
+      <td style={{ minWidth: "70%", height:'auto' }}>
         <EditableField
           onItemizedItemEdit={(evt) => onItemizedItemEdit(evt, item.itemId)}
           cellData={{
@@ -110,7 +110,7 @@ const ItemRow = (props) => {
         />
       </td>
       <td style={{ minWidth: "130px" }}>
-        {JSON.parse(currency).sign}{item.itemPrice * exchangeRate}
+        {JSON.parse(currency).sign}{(item.itemPrice * exchangeRate).toFixed(2)}
       </td>
       <td className="text-center" style={{ minWidth: "50px" }}>
         <BiTrash

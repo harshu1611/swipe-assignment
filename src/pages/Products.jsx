@@ -96,7 +96,7 @@ export default function Products() {
                 });
               }}
               type="text"
-              placeholder="Enter Produt Name"
+              placeholder="Enter Product Name"
             ></input>
             <input
               value={addProductForm.price}
@@ -108,7 +108,7 @@ export default function Products() {
                 });
               }}
               type="number"
-              placeholder="Enter Product Price"
+              placeholder="Enter Product Price (USD)"
             ></input>
             <input
               value={addProductForm.description}
@@ -183,7 +183,7 @@ export default function Products() {
                 });
               }}
               type="text"
-              placeholder="Enter Produt Name"
+              placeholder="Enter Product Name"
             ></input>
             <input
               value={editForm.price}
@@ -195,7 +195,7 @@ export default function Products() {
                 });
               }}
               type="number"
-              placeholder="Enter Product Price"
+              placeholder="Enter Product Price (USD)"
             ></input>
             <input
               value={editForm.description}
@@ -256,7 +256,7 @@ export default function Products() {
                     <tr>
                       <td>{item.id}</td>
                       <td className="fw-normal">{item.name}</td>
-                      <td className="fw-normal">{item.price}</td>
+                      <td className="fw-normal">${item.price}</td>
                       <td className="fw-normal">{item.description}</td>
                       <td style={{ width: "5%" }}>
                         <Button
